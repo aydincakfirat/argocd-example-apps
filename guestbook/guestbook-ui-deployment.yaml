@@ -13,16 +13,16 @@ spec:
       labels:
         app: guestbook-ui
     spec:
-      readinessProbe:
-        httpGet:
-        path: /
-          port: 80
-        initialDelaySeconds: 20  # pod başladıktan sonra ilk kontrolün gecikmesi
-        periodSeconds: 5         # her 5 saniyede bir kontrol
-        failureThreshold: 3      # 3 kez başarısız olursa 'not ready'
-        successThreshold: 1
       containers:
         - image: gcr.io/google-samples/gb-frontend:v5
           name: guestbook-ui
           ports:
             - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 20  # pod başladıktan sonra ilk kontrolün gecikmesi
+            periodSeconds: 5         # her 5 saniyede bir kontrol
+            failureThreshold: 3      # 3 kez başarısız olursa 'not ready'
+            successThreshold: 1

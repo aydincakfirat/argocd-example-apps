@@ -19,7 +19,6 @@ spec:
     app: {{ template "helm-guestbook.name" . }}
     release: {{ .Release.Name }}
 ---
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -33,11 +32,12 @@ spec:
   type: NodePort
   ports:
     - name: http
-      port: 80           # container port
+      port: 80
       targetPort: http
-      nodePort: 8092     # dış dünyadan erişim portu
+      # nodePort must be in the Kubernetes allowed range (default: 30000-32767).
+      # Change or remove this line to let Kubernetes assign an available port automatically.
+      nodePort: 30092
       protocol: TCP
   selector:
     app: {{ template "helm-guestbook.name" . }}
     release: {{ .Release.Name }}
-

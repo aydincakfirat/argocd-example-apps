@@ -19,6 +19,7 @@ spec:
     app: {{ template "helm-guestbook.name" . }}
     release: {{ .Release.Name }}
 ---
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -29,12 +30,14 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  type: {{ .Values.service.type }}
+  type: NodePort
   ports:
-    - port: {{ .Values.service.port }}
+    - name: http
+      port: 80           # container port
       targetPort: http
+      nodePort: 8092     # dış dünyadan erişim portu
       protocol: TCP
-      name: http
   selector:
     app: {{ template "helm-guestbook.name" . }}
     release: {{ .Release.Name }}
+

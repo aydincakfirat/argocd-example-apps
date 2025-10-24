@@ -5,12 +5,12 @@
 replicaCount: 1
 
 image:
-  repository: gcr.io/google-samples/gb-frontend
-  tag: v5
+  #repository: gcr.io/google-samples/gb-frontend
+  #tag: v5
+  #pullPolicy: IfNotPresent
+  repository: gcr.io/google-samples/cassandra
+  tag: v12
   pullPolicy: IfNotPresent
-#  repository: gcr.io/google-samples/hello-app
-#  tag: latest
-#  pullPolicy: IfNotPresent
 service:
   type: ClusterIP
   port: 80

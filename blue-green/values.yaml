@@ -9,7 +9,7 @@ image:
 #  tag: v5
 #  pullPolicy: IfNotPresent
   repository: gcr.io/google-samples/hello-app
-  tag: 1.0
+  tag: latest
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP

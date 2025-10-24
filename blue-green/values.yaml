@@ -5,10 +5,12 @@
 replicaCount: 1
 
 image:
-  repository: gcr.io/google-samples/gb-frontend
-  tag: v5
+#  repository: gcr.io/google-samples/gb-frontend
+#  tag: v5
+#  pullPolicy: IfNotPresent
+  repository: gcr.io/google-samples/hello-app
+  tag: 10
   pullPolicy: IfNotPresent
-
 service:
   type: ClusterIP
   port: 80

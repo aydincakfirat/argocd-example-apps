@@ -8,8 +8,8 @@ image:
   #repository: gcr.io/google-samples/gb-frontend
   #tag: v5
   #pullPolicy: IfNotPresent
-  repository: gcr.io/google-samples/cassandra
-  tag: v12
+  repository: gcr.io/google-samples/whereami
+  tag: v1.2.24
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP

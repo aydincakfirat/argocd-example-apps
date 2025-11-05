@@ -55,12 +55,12 @@ spec:
 
             EXPECTED_READY=2
 
-            if [ "$READY" -eq "$EXPECTED_READY" ] && [ "$EXPECTED_READY" -gt 0 ]; then
+            if [ "$READY" -ge "$EXPECTED_READY" ] && [ "$EXPECTED_READY" -gt 0 ]; then
               echo "All guestbook-ui pods are ready (ready=$READY)"
               exit 0
             fi
 
-            echo "Waiting for guestbook-ui pods to be ready... (ready=$READY expected=$EXPECTED_READY)"
+            echo "Waiting for guestbook-ui pods to be ready... (ready=$READY min_expected=$EXPECTED_READY)"
             sleep 5
           done
       restartPolicy: Never

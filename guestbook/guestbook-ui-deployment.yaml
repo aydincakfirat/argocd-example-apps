@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: guestbook-ui
 spec:
-  replicas: 4
+  replicas: 4  # İlk başlangıç
   revisionHistoryLimit: 3
   selector:
     matchLabels:
@@ -22,7 +22,37 @@ spec:
             httpGet:
               path: /
               port: 80
-            initialDelaySeconds: 20  # pod başladıktan sonra ilk kontrolün gecikmesi
-            periodSeconds: 5         # her 5 saniyede bir kontrol
-            failureThreshold: 3      # 3 kez başarısız olursa 'not ready'
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 3
             successThreshold: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: guestbook-ui-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: guestbook-ui
+  minReplicas: 4
+  maxReplicas: 8
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 30  # Her 30 saniyede 2 pod ekle
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 1  # Düşük tutarak sürekli scale etmesini sağla

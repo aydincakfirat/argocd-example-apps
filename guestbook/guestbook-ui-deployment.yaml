@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: guestbook-ui
 spec:
-  replicas: 4  # İlk başlangıç
+  replicas: 4
   revisionHistoryLimit: 3
   selector:
     matchLabels:
@@ -31,28 +31,86 @@ spec:
               cpu: 100m
               memory: 128Mi
 ---
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: guestbook-ui-hpa
+  name: progressive-scaler
 spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: guestbook-ui
-  minReplicas: 4
-  maxReplicas: 8
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      policies:
-      - type: Pods
-        value: 2
-        periodSeconds: 30  # Her 30 saniyede 2 pod ekle
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 1  # Düşük tutarak sürekli scale etmesini sağla
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      serviceAccountName: scaler-sa
+      restartPolicy: OnFailure
+      containers:
+      - name: scaler
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          
+          echo "Checking if deployment exists..."
+          if ! kubectl get deployment guestbook-ui > /dev/null 2>&1; then
+            echo "Deployment not found, exiting..."
+            exit 0
+          fi
+          
+          echo "Waiting for initial 4 pods to be ready..."
+          kubectl wait --for=condition=ready pod -l app=guestbook-ui --timeout=120s || true
+          
+          READY_PODS=$(kubectl get pods -l app=guestbook-ui -o json | jq '[.items[] | select(.status.conditions[] | select(.type=="Ready" and .status=="True"))] | length')
+          echo "Ready pods: $READY_PODS"
+          
+          if [ "$READY_PODS" -ge 4 ]; then
+            echo "4 pods are ready. Waiting 30 seconds before scaling to 6..."
+            sleep 30
+            
+            kubectl scale deployment guestbook-ui --replicas=6
+            echo "Scaled to 6 replicas. Waiting for new pods..."
+            kubectl wait --for=condition=ready pod -l app=guestbook-ui --timeout=120s || true
+            
+            READY_PODS=$(kubectl get pods -l app=guestbook-ui -o json | jq '[.items[] | select(.status.conditions[] | select(.type=="Ready" and .status=="True"))] | length')
+            echo "Ready pods: $READY_PODS"
+            
+            if [ "$READY_PODS" -ge 6 ]; then
+              echo "6 pods are ready. Waiting 30 seconds before scaling to 8..."
+              sleep 30
+              
+              kubectl scale deployment guestbook-ui --replicas=8
+              echo "Scaled to 8 replicas. Waiting for new pods..."
+              kubectl wait --for=condition=ready pod -l app=guestbook-ui --timeout=120s || true
+              
+              echo "Progressive scaling completed!"
+              kubectl get pods -l app=guestbook-ui
+            fi
+          fi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scaler-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scaler-role
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/scale"]
+  verbs: ["get", "list", "patch", "update"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scaler-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: scaler-role
+subjects:
+- kind: ServiceAccount
+  name: scaler-sa

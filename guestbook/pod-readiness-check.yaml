@@ -47,15 +47,20 @@ spec:
         - |
           echo "Checking pod readiness for guestbook-ui..."
           while true; do
-            READY=$(kubectl get pods -n default -l app=guestbook-ui -o jsonpath='{.items[*].status.containerStatuses[*].ready}'| grep -o true)
-            #TOTAL=$(kubectl get pods -n default -l app=guestbook-ui --no-headers | wc -l)
+            # Pod içindeki containerStatuses alanlarından "true" değerlerini say
+            READY=$(kubectl get pods -n default -l app=guestbook-ui -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -o true | wc -l)
+            # wc -l boşlukla dönebilir, boşlukları temizle ve boşsa 0 ata
+            READY=$(echo "$READY" | tr -d '[:space:]')
+            READY=${READY:-0}
+
             EXPECTED_READY=2
-            #if [ "$READY" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
+
             if [ "$READY" -eq "$EXPECTED_READY" ] && [ "$EXPECTED_READY" -gt 0 ]; then
-              echo "All guestbook-ui pods are ready"
+              echo "All guestbook-ui pods are ready (ready=$READY)"
               exit 0
             fi
-            echo "Waiting for guestbook-ui pods to be ready..."
+
+            echo "Waiting for guestbook-ui pods to be ready... (ready=$READY expected=$EXPECTED_READY)"
             sleep 5
           done
       restartPolicy: Never

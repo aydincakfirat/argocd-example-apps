@@ -15,8 +15,8 @@ spec:
         - |
           echo "Checking pod readiness..."
           while true; do
-            READY=$(kubectl get pods -n default -l app=my-app -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c true)
-            TOTAL=$(kubectl get pods -n default -l app=my-app --no-headers | wc -l)
+            READY=$(kubectl get pods -n default -l app=guestbook-ui -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c true)
+            TOTAL=$(kubectl get pods -n default -l app=guestbook-ui --no-headers | wc -l)
             if [ "$READY" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
               echo "All pods ready"
               exit 0

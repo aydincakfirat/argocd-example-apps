@@ -42,6 +42,9 @@ spec:
       - name: check-ready
         image: bitnami/kubectl:latest
         command:
+        - /bin/sh
+        - -c
+        - |
           echo "Checking pod readiness for guestbook-ui..."
           while true; do
             READY=$(kubectl get pods -n default -l app=guestbook-ui -o jsonpath='{.items[*].status.containerStatuses[*].ready}'| grep -o true)

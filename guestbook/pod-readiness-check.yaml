@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pod-readiness-check
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - name: check-ready
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Checking pod readiness..."
+          while true; do
+            READY=$(kubectl get pods -n default -l app=my-app -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -c true)
+            TOTAL=$(kubectl get pods -n default -l app=my-app --no-headers | wc -l)
+            if [ "$READY" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
+              echo "All pods ready"
+              exit 0
+            fi
+            echo "Waiting for pods to be ready..."
+            sleep 5
+          done
+      restartPolicy: Never
+  backoffLimit: 1

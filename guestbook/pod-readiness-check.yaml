@@ -36,8 +36,8 @@ metadata:
   namespace: default
   annotations:
     # Hook olarak işaretlenince delete policy ile sildiğimizde uygulama 'Missing' duruma düşmüyor
-    #argocd.argoproj.io/hook: Sync
-    #argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   ttlSecondsAfterFinished: 300  # 5 dakika = 300 saniye
   template:

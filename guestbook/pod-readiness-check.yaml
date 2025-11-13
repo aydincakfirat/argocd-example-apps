@@ -35,8 +35,8 @@ metadata:
   name: ready-for-analyze
   namespace: default
   annotations:
-    #argocd.argoproj.io/hook: PostSync
-    #argocd.argoproj.io/hook-delete-policy: BeforeHookCreation 
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation 
 spec:
   ttlSecondsAfterFinished: 300  # 5 dakika = 300 saniye
   template:

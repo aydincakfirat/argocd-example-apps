@@ -48,11 +48,11 @@ spec:
         image: bitnami/kubectl:latest
         resources:
           requests:
-            cpu: "10m"
-            memory: "16Mi"
-          limits:
             cpu: "50m"
-            memory: "20Mi"
+            memory: "100Mi"
+          limits:
+            cpu: "500m"
+            memory: "200Mi"
         command:
         - /bin/sh
         - -c

@@ -53,21 +53,36 @@ spec:
         - -c
         - |
           echo "Checking pod readiness for guestbook-ui..."
+
+          APP_LABEL="guestbook-ui"
+          NAMESPACE="default"
+
+          # HPA varsa minReplicas'ı al
+          MIN_REPLICAS=$(kubectl get hpa -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[0].minReplicas}')
+          MIN_REPLICAS=${MIN_REPLICAS:-""}
+
+          if [ -n "$MIN_REPLICAS" ]; then
+            EXPECTED_READY=$MIN_REPLICAS
+            echo "✅ HPA detected. Using minReplicas=$EXPECTED_READY"
+          else
+            REPLICAS=$(kubectl get deploy -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[0].spec.replicas}')
+            REPLICAS=${REPLICAS:-1}
+            HALF=$((REPLICAS / 2))
+            EXPECTED_READY=$((HALF >= 2 ? HALF : 2))
+            echo "ℹ️ No HPA found. Using half of replicas=$REPLICAS → expected=$EXPECTED_READY"
+          fi
+
           while true; do
-            # Pod içindeki containerStatuses alanlarından "true" değerlerini say
-            READY=$(kubectl get pods -n default -l app=guestbook-ui -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -o true | wc -l)
-            # wc -l boşlukla dönebilir, boşlukları temizle ve boşsa 0 ata
+            READY=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -o true | wc -l)
             READY=$(echo "$READY" | tr -d '[:space:]')
             READY=${READY:-0}
 
-            EXPECTED_READY=2
-
-            if [ "$READY" -ge "$EXPECTED_READY" ] && [ "$EXPECTED_READY" -gt 0 ]; then
-              echo "Expected number of guestbook-ui pods are ready (ready=$READY)"
+            if [ "$READY" -ge "$EXPECTED_READY" ]; then
+              echo "✅ Expected number of $APP_LABEL pods are ready (ready=$READY)"
               exit 0
             fi
 
-            echo "Waiting for guestbook-ui pods to be ready... (ready=$READY min_expected=$EXPECTED_READY)"
+            echo "⏳ Waiting for $APP_LABEL pods to be ready... (ready=$READY min_expected=$EXPECTED_READY)"
             sleep 5
           done
       restartPolicy: Never

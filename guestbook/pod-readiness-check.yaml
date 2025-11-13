@@ -35,12 +35,9 @@ metadata:
   name: ready-for-analyze
   namespace: default
   annotations:
-    # Job'u ArgoCD'nin health check'inden hariç tut
-    argocd.argoproj.io/compare-options: IgnoreExtraneous
-    # veya
-    argocd.argoproj.io/sync-options: Prune=false
     # Hook olarak işaretle (opsiyonel)
     argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Validate=false
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   ttlSecondsAfterFinished: 3  # 5 dakika = 300 saniye

@@ -55,41 +55,41 @@ spec:
             cpu: "500m"
             memory: "200Mi"
         command:
-        - /bin/sh
-        - -c
-        - |
-          echo "Checking pod readiness for guestbook-ui..."
+          - /bin/sh
+          - -c
+          - |
+            echo "Checking pod readiness for guestbook-ui..."
 
-          APP_LABEL="guestbook-ui"
-          NAMESPACE="default"
+            APP_LABEL="guestbook-ui"
+            NAMESPACE="default"
 
-          # HPA varsa minReplicas'ı al
-          MIN_REPLICAS=$(kubectl get hpa -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[0].minReplicas}')
-          MIN_REPLICAS=${MIN_REPLICAS:-""}
+            # HPA varsa minReplicas'ı al
+            MIN_REPLICAS=$(kubectl get hpa -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[0].minReplicas}')
+            MIN_REPLICAS=${MIN_REPLICAS:-""}
 
-          if [ -n "$MIN_REPLICAS" ]; then
-            EXPECTED_READY=$MIN_REPLICAS
-            echo "✅ HPA detected. Using minReplicas=$EXPECTED_READY"
-          else
-            REPLICAS=$(kubectl get deploy -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[0].spec.replicas}')
-            REPLICAS=${REPLICAS:-1}
-            HALF=$((REPLICAS / 2))
-            EXPECTED_READY=$((HALF >= 2 ? HALF : 2))
-            echo "ℹ️ No HPA found. Using half of replicas=$REPLICAS → expected=$EXPECTED_READY"
-          fi
-
-          while true; do
-            READY=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -o true | wc -l)
-            READY=$(echo "$READY" | tr -d '[:space:]')
-            READY=${READY:-0}
-
-            if [ "$READY" -ge "$EXPECTED_READY" ]; then
-              echo "✅ Expected number of $APP_LABEL pods are ready (ready=$READY)"
-              exit 0
+            if [ -n "$MIN_REPLICAS" ]; then
+              EXPECTED_READY=$MIN_REPLICAS
+              echo "✅ HPA detected. Using minReplicas=$EXPECTED_READY"
+            else
+              REPLICAS=$(kubectl get deploy -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[0].spec.replicas}')
+              REPLICAS=${REPLICAS:-1}
+              HALF=$((REPLICAS / 2))
+              EXPECTED_READY=$((HALF >= 2 ? HALF : 2))
+              echo "ℹ️ No HPA found. Using half of replicas=$REPLICAS → expected=$EXPECTED_READY"
             fi
 
-            echo "⏳ Waiting for $APP_LABEL pods to be ready... (ready=$READY min_expected=$EXPECTED_READY)"
-            sleep 5
-          done
+            while true; do
+              READY=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_LABEL" -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -o true | wc -l)
+              READY=$(echo "$READY" | tr -d '[:space:]')
+              READY=${READY:-0}
+
+              if [ "$READY" -ge "$EXPECTED_READY" ]; then
+                echo "✅ Expected number of $APP_LABEL pods are ready (ready=$READY)"
+                exit 0
+              fi
+
+              echo "⏳ Waiting for $APP_LABEL pods to be ready... (ready=$READY min_expected=$EXPECTED_READY)"
+              sleep 5
+            done
       restartPolicy: Never
   backoffLimit: 1

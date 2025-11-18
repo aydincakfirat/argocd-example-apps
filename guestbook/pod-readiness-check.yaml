@@ -87,18 +87,9 @@ spec:
               fi
             fi
 
+            # 40 dakika timeout (2400 saniye)
+            START_TIME=$(date +%s)
+            TIMEOUT=$((40 * 60))
+
             while true; do
-              READY=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_NAME" -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -o true | wc -l)
-              READY=$(echo "$READY" | tr -d '[:space:]')
-              READY=${READY:-0}
-
-              if [ "$READY" -ge "$EXPECTED_READY" ] && [ "$EXPECTED_READY" -gt 0 ]; then
-                echo "✅ Expected number of $APP_NAME pods are ready (ready=$READY)"
-                exit 0
-              fi
-
-              echo "⏳ Waiting for $APP_NAME pods to be ready... (ready=$READY min_expected=$EXPECTED_READY)"
-              sleep 5
-            done
-      restartPolicy: Never
-  backoffLimit: 1
+              READY=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_NAME" -o jsonpath='{.items[*].st*]()_

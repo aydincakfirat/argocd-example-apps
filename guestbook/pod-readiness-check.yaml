@@ -43,7 +43,6 @@ spec:
       serviceAccountName: flowe-pod-checker
       containers:
       - name: check-ready
-        #image: bitnami/kubectl:latest
         image: pascaliske/alpine-kubectl:latest
         resources:
           requests:
@@ -69,13 +68,19 @@ spec:
               echo "✅ HPA detected. Using minReplicas=$EXPECTED_READY"
             else
               DEPLOY_REPLICAS=$(kubectl get deploy "$APP_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "")
+              DEPLOY_REPLICAS=${DEPLOY_REPLICAS:-0}
               echo "DEBUG: deploy replicas='$DEPLOY_REPLICAS'"
-              if [ "$DEPLOY_REPLICAS" = "1" ]; then
-                  EXPECTED_READY=1
-                  echo "ℹ️ No HPA found & deployment has 1 replica → EXPECTED_READY=1""
+
+              # sayısal karşılaştırma ile daha güvenli
+              if [ "$DEPLOY_REPLICAS" -eq 1 ] 2>/dev/null; then
+                EXPECTED_READY=1
+                echo "ℹ️ No HPA found & deployment has 1 replica → EXPECTED_READY=1"
+              elif [ "$DEPLOY_REPLICAS" -gt 1 ] 2>/dev/null; then
+                EXPECTED_READY=$DEPLOY_REPLICAS
+                echo "ℹ️ No HPA found & deployment has $DEPLOY_REPLICAS replicas → EXPECTED_READY=$EXPECTED_READY"
               else
                 EXPECTED_READY=2
-                echo "ℹ️ No HPA found. Using default expected=$EXPECTED_READY"
+                echo "ℹ️ No HPA & deployment replicas unknown/0 → default EXPECTED_READY=2"
               fi
             fi
 

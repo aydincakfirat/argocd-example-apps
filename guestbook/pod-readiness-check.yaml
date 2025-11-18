@@ -44,7 +44,7 @@ spec:
       containers:
       - name: check-ready
         #image: bitnami/kubectl:latest
-        image: registry.k8s.io/kubectl:v1.30.2
+        image: pascaliske/alpine-kubectl:latest
         resources:
           requests:
             cpu: "150m"

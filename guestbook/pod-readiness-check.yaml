@@ -68,7 +68,7 @@ spec:
               EXPECTED_READY=${MIN_REPLICAS:-2}
               echo "✅ HPA detected. Using minReplicas=$EXPECTED_READY"
             else
-              DEPLOY_REPLICAS=$(kubectl get dploy "$APP_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null)
+              DEPLOY_REPLICAS=$(kubectl get deploy "$APP_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null)
               if [ "$DEPLOY_REPLICAS" = "1" ]; then
                 EXPECTED_READY=1
                 echo "ℹ️ No HPA found & deployment has 1 replica → EXPECTED_READY=1"

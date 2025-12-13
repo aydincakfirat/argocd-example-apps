@@ -1,1 +1,88 @@
+<<<<<<< HEAD
 
+=======
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deployment-ready-check
+  namespace: default
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  ttlSecondsAfterFinished: 30
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: flowe-pod-checker
+      containers:
+      - name: check-ready
+        image: pascaliske/alpine-kubectl:latest
+        resources:
+          requests:
+            cpu: "150m"
+            memory: "100Mi"
+          limits:
+            cpu: "500m"
+            memory: "200Mi"
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "🔍 Checking pod readiness for guestbook-ui..."
+
+            APP_NAME="guestbook-ui"
+            echo "APP_NAME=$APP_NAME"
+            
+            NAMESPACE="default"
+            echo "NAMESPACE=$NAMESPACE"
+
+            # HPA varsa minReplicas'ı al, yoksa fallback olarak deploy replicas kullan
+            HPA_NAME=$(kubectl get hpa -n "$NAMESPACE" -l app.kubernetes.io/instance="$APP_NAME" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+            if [ -n "$HPA_NAME" ]; then
+              MIN_REPLICAS=$(kubectl get hpa "$HPA_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.minReplicas}' 2>/dev/null)
+              EXPECTED_READY=${MIN_REPLICAS:-2}
+              echo "✅ HPA detected: $HPA_NAME, using minReplicas=$EXPECTED_READY"
+            else
+              DEPLOY_REPLICAS=$(kubectl get deploy -n "$NAMESPACE" -l app.kubernetes.io/instance="$APP_NAME" -o jsonpath='{.items[0].spec.replicas}' 2>/dev/null || echo "")
+              DEPLOY_REPLICAS=${DEPLOY_REPLICAS:-0}
+              echo "DEBUG: deploy replicas='$DEPLOY_REPLICAS'"
+
+              if [ "$DEPLOY_REPLICAS" -eq 1 ] 2>/dev/null; then
+                EXPECTED_READY=1
+              elif [ "$DEPLOY_REPLICAS" -gt 1 ] 2>/dev/null; then
+                EXPECTED_READY=$DEPLOY_REPLICAS
+              else
+                EXPECTED_READY=1
+              fi
+              echo "ℹ️ EXPECTED_READY=$EXPECTED_READY"
+            fi
+
+            START_TIME=$(date +%s)
+            TIMEOUT=$((40 * 60))
+
+            while true; do
+              READY=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/instance="$APP_NAME" -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' | grep -o True | wc -l)
+              READY=$(echo "$READY" | tr -d '[:space:]')
+              READY=${READY:-0}
+
+              if [ "$READY" -ge "$EXPECTED_READY" ] && [ "$EXPECTED_READY" -gt 0 ]; then
+                echo "✅ Expected number of $APP_NAME pods are ready (ready=$READY)"
+                exit 0
+              fi
+
+              NOW=$(date +%s)
+              ELAPSED=$(( NOW - START_TIME ))
+              if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+                echo "❌ Timeout reached ($TIMEOUT seconds). Ready pods: $READY / Expected: $EXPECTED_READY"
+                exit 1
+              fi
+
+              echo "⏳ Waiting for $APP_NAME pods to be ready... (ready=$READY min_expected=$EXPECTED_READY)"
+              sleep 5
+            done
+      restartPolicy: Never
+  backoffLimit: 1
+>>>>>>> f9b6604 (updated and created job.yaml)

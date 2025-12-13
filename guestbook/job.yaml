@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: deployment-ready-check
+  name: deployment-ready-check-prod
   namespace: default
   annotations:
     argocd.argoproj.io/hook: Sync

@@ -12,7 +12,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "false"
-        timestamp: "{{ .Values.syncTimestamp | default now }}"
+        #timestamp: "{{ .Values.syncTimestamp | default now }}"
     spec:
       serviceAccountName: flowe-pod-checker
       containers:

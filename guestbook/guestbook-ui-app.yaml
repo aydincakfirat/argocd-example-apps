@@ -8,7 +8,7 @@ spec:
 
   source:
     repoURL: https://github.com/aydincakfirat/argocd-example-apps.git
-    targetRevision: main
+    targetRevision: master
     path: guestbook
 
   destination:
@@ -18,6 +18,3 @@ spec:
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
-    automated:
-      prune: true
-      selfHeal: true 

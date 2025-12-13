@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-
-=======
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -85,4 +82,3 @@ spec:
             done
       restartPolicy: Never
   backoffLimit: 1
->>>>>>> f9b6604 (updated and created job.yaml)

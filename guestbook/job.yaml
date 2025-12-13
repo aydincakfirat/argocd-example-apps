@@ -4,15 +4,16 @@ metadata:
   name: deployment-ready-check-prod
   namespace: default
   annotations:
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    #argocd.argoproj.io/hook: Sync
+    #argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
-  ttlSecondsAfterFinished: 30
+  #ttlSecondsAfterFinished: 30
   template:
     metadata:
       annotations:
         sidecar.istio.io/inject: "false"
         #timestamp: "{{ .Values.syncTimestamp | default now }}"
+        checksum/config: {{ randAlphaNum 8 | quote }}
     spec:
       serviceAccountName: flowe-pod-checker
       containers:

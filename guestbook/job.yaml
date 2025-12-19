@@ -13,7 +13,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
         #timestamp: "{{ .Values.syncTimestamp | default now }}"
-        checksum/config: {{ randAlphaNum 8 | quote }}
+        #checksum/config: {{ randAlphaNum 8 | quote }}
     spec:
       serviceAccountName: flowe-pod-checker
       containers:

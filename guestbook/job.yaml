@@ -4,7 +4,7 @@ metadata:
   name: deployment-ready-check-prod
   namespace: default
   annotations:
-    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook: Sync
     #argocd.argoproj.io/hook-delete-policy: HookSucceeded,HookFailed
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:

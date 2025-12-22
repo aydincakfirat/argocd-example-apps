@@ -8,8 +8,8 @@ metadata:
     #argocd.argoproj.io/hook-delete-policy: HookSucceeded,HookFailed
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookFailed
 spec:
-  ttlSecondsAfterFinished: 30
-  activeDeadlineSeconds: 35
+  ttlSecondsAfterFinished: 240
+  #activeDeadlineSeconds: 35
   template:
     metadata:
       annotations:
@@ -63,7 +63,7 @@ spec:
 
             # 40 dakika timeout (2400 saniye)
             START_TIME=$(date +%s)
-            TIMEOUT=$((1 * 60))
+            TIMEOUT=$((40 * 60))
 
             while true; do
               READY=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_NAME" -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -o true | wc -l)

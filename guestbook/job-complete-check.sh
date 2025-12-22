@@ -1,7 +1,7 @@
 #!/bin/bash
 
 APP_NAME="nginx-app"
-JOB_NAME="ready-for-analyze"
+JOB_NAME="deployment-ready-check-prod"
 TIMEOUT_SECONDS=1200  # 20 dakika
 INTERVAL_SECONDS=5
 

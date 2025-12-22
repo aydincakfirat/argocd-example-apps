@@ -9,6 +9,7 @@ metadata:
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookFailed
 spec:
   ttlSecondsAfterFinished: 30
+  activeDeadlineSeconds: 35
   template:
     metadata:
       annotations:

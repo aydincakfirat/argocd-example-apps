@@ -39,6 +39,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: deployment-ready-check
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
   namespace: default
 spec:
   template:

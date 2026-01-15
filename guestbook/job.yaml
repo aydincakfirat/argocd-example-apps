@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/hook: Sync
     #argocd.argoproj.io/hook-delete-policy: HookSucceeded,HookFailed
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookFailed
+    #argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookFailed
 spec:
   ttlSecondsAfterFinished: 240
   #activeDeadlineSeconds: 35
@@ -87,3 +87,4 @@ spec:
             done
       restartPolicy: Never
   backoffLimit: 1
+

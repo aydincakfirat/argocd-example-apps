@@ -8,8 +8,13 @@ metadata:
     #argocd.argoproj.io/hook-delete-policy: HookSucceeded,HookFailed
     #argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookFailed
 spec:
-  ttlSecondsAfterFinished: 240
+  ttlSecondsAfterFinished: 300 # ✅ 5 dakika sonra otomatik sil
   #activeDeadlineSeconds: 35
+  completions: 1                    # ✅ Ekle
+  parallelism: 1                    # ✅ Ekle
+  backoffLimit: 2                   # ✅ 1 yerine 2
+  activeDeadlineSeconds: 2700       # ✅ 45 dakika max
+  
   template:
     metadata:
       annotations:
@@ -87,5 +92,6 @@ spec:
             done
       restartPolicy: Never
   backoffLimit: 1
+
 
 

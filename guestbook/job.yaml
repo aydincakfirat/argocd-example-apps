@@ -13,7 +13,7 @@ spec:
   completions: 1                    # ✅ Ekle
   parallelism: 1                    # ✅ Ekle
   backoffLimit: 2                   # ✅ 1 yerine 2
-  activeDeadlineSeconds: 2700       # ✅ 45 dakika max
+  activeDeadlineSeconds: 27       # ✅ 45 dakika max
   
   template:
     metadata:
@@ -91,6 +91,7 @@ spec:
               sleep 5
             done
       restartPolicy: Never
+
 
 
 

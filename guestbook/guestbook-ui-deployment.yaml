@@ -12,7 +12,7 @@ spec:
       labels:
         app: guestbook-ui
       annotations:
-        syncTimestamp: "{{ .Values.syncTimestamp | default now | quote }}"
+        syncTimestamp: "{{ now }}"
     spec:
       containers:
         - image: gcr.io/google-samples/gb-frontend:v5

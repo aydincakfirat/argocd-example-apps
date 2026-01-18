@@ -154,7 +154,7 @@ spec:
               fi
 
               # Progress göster
-              printf "\r⏳ [%02d:%02d] New RS: %s | Ready: %d/%d | Total new pods: %d     " \
+              echo "⏳ [$ELAPSED_MIN:$ELAPSED_SEC] New RS: $NEWEST_RS | Ready: $READY_NEW/$EXPECTED_READY | Total new pods: $TOTAL_NEW"
                 "$ELAPSED_MIN" "$ELAPSED_SEC" "$NEWEST_RS" "$READY_NEW" "$EXPECTED_READY" "$TOTAL_NEW"
 
               sleep 5

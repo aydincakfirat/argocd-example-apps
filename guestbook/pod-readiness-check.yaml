@@ -40,7 +40,7 @@ kind: Job
 metadata:
   name: deployment-ready-check
   annotations:
-    argocd.argoproj.io/sync-wave: "10"
+    argocd.argoproj.io/sync-wave: "2"
   namespace: default
 spec:
   template:

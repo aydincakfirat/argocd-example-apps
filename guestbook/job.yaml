@@ -25,7 +25,7 @@ spec:
       serviceAccountName: flowe-pod-checker
       containers:
       - name: check-ready
-        image: pascaliske/alpine-kubectl:latest
+        image: alpine/kubectl:latest
         resources:
           requests:
             cpu: "150m"
@@ -91,6 +91,7 @@ spec:
               sleep 5
             done
       restartPolicy: Never
+
 
 
 

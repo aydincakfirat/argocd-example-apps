@@ -1,0 +1,161 @@
+# templates/job-new-replicaset-check.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deployment-new-rs-check-{{ .Release.Revision }}
+  namespace: default
+  labels:
+    job-type: new-replicaset-check
+spec:
+  ttlSecondsAfterFinished: 300
+  completions: 1
+  parallelism: 1
+  backoffLimit: 2
+  activeDeadlineSeconds: 2700
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      terminationGracePeriodSeconds: 5
+      serviceAccountName: flowe-pod-checker
+      restartPolicy: Never
+      containers:
+      - name: check-new-rs
+        image: alpine/kubectl:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "150m"
+            memory: "100Mi"
+          limits:
+            cpu: "500m"
+            memory: "200Mi"
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "🔍 [NEW REPLICASET CHECK] Checking NEW pods for guestbook-ui..."
+            APP_NAME="guestbook-ui"
+            NAMESPACE="default"
+
+            # HPA varsa minReplicas'ı al, yoksa deployment replicas
+            HPA_EXISTS=$(kubectl get hpa "$APP_NAME" -n "$NAMESPACE" --ignore-not-found)
+            if [ -n "$HPA_EXISTS" ]; then
+              MIN_REPLICAS=$(kubectl get hpa "$APP_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.minReplicas}' 2>/dev/null)
+              EXPECTED_READY=${MIN_REPLICAS:-2}
+              echo "✅ HPA detected. Using minReplicas=$EXPECTED_READY"
+            else
+              DEPLOY_REPLICAS=$(kubectl get deploy "$APP_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "")
+              DEPLOY_REPLICAS=${DEPLOY_REPLICAS:-0}
+              echo "DEBUG: deploy replicas='$DEPLOY_REPLICAS'"
+              if [ "$DEPLOY_REPLICAS" -eq 1 ] 2>/dev/null; then
+                EXPECTED_READY=1
+                echo "ℹ️ No HPA found & deployment has 1 replica → EXPECTED_READY=1"
+              elif [ "$DEPLOY_REPLICAS" -gt 1 ] 2>/dev/null; then
+                EXPECTED_READY=$DEPLOY_REPLICAS
+                echo "ℹ️ No HPA found & deployment has $DEPLOY_REPLICAS replicas → EXPECTED_READY=$EXPECTED_READY"
+              else
+                EXPECTED_READY=2
+                echo "ℹ️ No HPA & deployment replicas unknown/0 → default EXPECTED_READY=2"
+              fi
+            fi
+
+            echo "📊 Expected ready pods in NEW ReplicaSet: $EXPECTED_READY"
+            echo ""
+
+            # En yeni ReplicaSet'i bul
+            echo "🔎 Finding newest ReplicaSet..."
+            NEWEST_RS=$(kubectl get rs -n "$NAMESPACE" -l app="$APP_NAME" \
+              --sort-by=.metadata.creationTimestamp \
+              -o jsonpath='{.items[-1:].metadata.name}' 2>/dev/null)
+
+            if [ -z "$NEWEST_RS" ]; then
+              echo "❌ No ReplicaSet found for app=$APP_NAME"
+              exit 1
+            fi
+
+            echo "✅ Newest ReplicaSet: $NEWEST_RS"
+
+            # ReplicaSet'in template hash'ini al
+            RS_POD_TEMPLATE_HASH=$(kubectl get rs "$NEWEST_RS" -n "$NAMESPACE" \
+              -o jsonpath='{.metadata.labels.pod-template-hash}' 2>/dev/null)
+
+            if [ -z "$RS_POD_TEMPLATE_HASH" ]; then
+              echo "⚠️ Could not get pod-template-hash, using ReplicaSet name filter"
+              # Fallback: ReplicaSet adıyla pod'ları filtrele
+              RS_NAME_PREFIX=$(echo "$NEWEST_RS" | sed 's/-[^-]*$//')
+            else
+              echo "✅ Pod template hash: $RS_POD_TEMPLATE_HASH"
+            fi
+
+            echo ""
+            echo "⏱️ Starting monitoring (timeout: 40 minutes)..."
+            echo "=========================================="
+
+            # 40 dakika timeout
+            START_TIME=$(date +%s)
+            TIMEOUT=$((40 * 60))
+
+            while true; do
+              NOW=$(date +%s)
+              ELAPSED=$(( NOW - START_TIME ))
+
+              # Timeout kontrolü
+              if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+                echo ""
+                echo "❌ TIMEOUT reached ($TIMEOUT seconds)"
+                echo "   New ReplicaSet pods did not become ready in time"
+                exit 1
+              fi
+
+              # Yeni ReplicaSet'in pod'larını say
+              if [ -n "$RS_POD_TEMPLATE_HASH" ]; then
+                # pod-template-hash ile filtrele (en güvenilir)
+                READY_NEW=$(kubectl get pods -n "$NAMESPACE" \
+                  -l "app=$APP_NAME,pod-template-hash=$RS_POD_TEMPLATE_HASH" \
+                  -o jsonpath='{.items[*].status.containerStatuses[*].ready}' 2>/dev/null \
+                  | grep -o true | wc -l)
+
+                TOTAL_NEW=$(kubectl get pods -n "$NAMESPACE" \
+                  -l "app=$APP_NAME,pod-template-hash=$RS_POD_TEMPLATE_HASH" \
+                  --no-headers 2>/dev/null | wc -l)
+              else
+                # Fallback: ReplicaSet adı ile filtrele
+                READY_NEW=$(kubectl get pods -n "$NAMESPACE" \
+                  -o json 2>/dev/null | \
+                  jq -r ".items[] | select(.metadata.ownerReferences[]?.name==\"$NEWEST_RS\") | select(.status.containerStatuses[]?.ready==true) | .metadata.name" | \
+                  wc -l)
+
+                TOTAL_NEW=$(kubectl get pods -n "$NAMESPACE" \
+                  -o json 2>/dev/null | \
+                  jq -r ".items[] | select(.metadata.ownerReferences[]?.name==\"$NEWEST_RS\") | .metadata.name" | \
+                  wc -l)
+              fi
+
+              READY_NEW=$(echo "$READY_NEW" | tr -d '[:space:]')
+              TOTAL_NEW=$(echo "$TOTAL_NEW" | tr -d '[:space:]')
+              READY_NEW=${READY_NEW:-0}
+              TOTAL_NEW=${TOTAL_NEW:-0}
+
+              ELAPSED_MIN=$(( ELAPSED / 60 ))
+              ELAPSED_SEC=$(( ELAPSED % 60 ))
+
+              # Başarı kontrolü
+              if [ "$READY_NEW" -ge "$EXPECTED_READY" ] && [ "$EXPECTED_READY" -gt 0 ]; then
+                echo ""
+                echo "=========================================="
+                echo "✅ SUCCESS! New ReplicaSet pods are ready"
+                echo "   ReplicaSet: $NEWEST_RS"
+                echo "   Ready pods: $READY_NEW / Expected: $EXPECTED_READY"
+                echo "   Total new pods: $TOTAL_NEW"
+                echo "   Time elapsed: ${ELAPSED_MIN}m ${ELAPSED_SEC}s"
+                exit 0
+              fi
+
+              # Progress göster
+              printf "\r⏳ [%02d:%02d] New RS: %s | Ready: %d/%d | Total new pods: %d     " \
+                "$ELAPSED_MIN" "$ELAPSED_SEC" "$NEWEST_RS" "$READY_NEW" "$EXPECTED_READY" "$TOTAL_NEW"
+
+              sleep 5
+            done

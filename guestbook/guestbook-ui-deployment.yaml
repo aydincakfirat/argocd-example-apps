@@ -9,6 +9,7 @@ spec:
     matchLabels:
       app: guestbook-ui
   template:
+    timestamp: "{{ .Values.syncTimestamp | default now }}"
     metadata:
       labels:
         app: guestbook-ui

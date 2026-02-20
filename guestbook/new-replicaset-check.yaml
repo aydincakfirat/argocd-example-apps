@@ -6,6 +6,10 @@ metadata:
   namespace: default
   labels:
     job-type: new-replicaset-check
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   ttlSecondsAfterFinished: 30
   completions: 1

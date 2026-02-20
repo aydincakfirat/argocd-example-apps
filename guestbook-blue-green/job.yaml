@@ -1,0 +1,87 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deployment-ready-check-prod
+  namespace: default
+  annotations:
+    #argocd.argoproj.io/hook: Sync
+    #argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  #ttlSecondsAfterFinished: 30
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+        #timestamp: "{{ .Values.syncTimestamp | default now }}"
+        #checksum/config: {{ randAlphaNum 8 | quote }}
+    spec:
+      serviceAccountName: flowe-pod-checker
+      containers:
+      - name: check-ready
+        image: pascaliske/alpine-kubectl:latest
+        resources:
+          requests:
+            cpu: "150m"
+            memory: "100Mi"
+          limits:
+            cpu: "500m"
+            memory: "200Mi"
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "🔍 Checking pod readiness for guestbook-ui..."
+
+            APP_NAME="guestbook-ui"
+            NAMESPACE="default"
+
+            # HPA varsa minReplicas'ı al, yoksa fallback olarak 2 kullan
+            HPA_EXISTS=$(kubectl get hpa "$APP_NAME" -n "$NAMESPACE" --ignore-not-found)
+            if [ -n "$HPA_EXISTS" ]; then
+              MIN_REPLICAS=$(kubectl get hpa "$APP_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.minReplicas}' 2>/dev/null)
+              EXPECTED_READY=${MIN_REPLICAS:-2}
+              echo "✅ HPA detected. Using minReplicas=$EXPECTED_READY"
+            else
+              DEPLOY_REPLICAS=$(kubectl get deploy "$APP_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "")
+              DEPLOY_REPLICAS=${DEPLOY_REPLICAS:-0}
+              echo "DEBUG: deploy replicas='$DEPLOY_REPLICAS'"
+
+              # sayısal karşılaştırma ile daha güvenli
+              if [ "$DEPLOY_REPLICAS" -eq 1 ] 2>/dev/null; then
+                EXPECTED_READY=1
+                echo "ℹ️ No HPA found & deployment has 1 replica → EXPECTED_READY=1"
+              elif [ "$DEPLOY_REPLICAS" -gt 1 ] 2>/dev/null; then
+                EXPECTED_READY=$DEPLOY_REPLICAS
+                echo "ℹ️ No HPA found & deployment has $DEPLOY_REPLICAS replicas → EXPECTED_READY=$EXPECTED_READY"
+              else
+                EXPECTED_READY=2
+                echo "ℹ️ No HPA & deployment replicas unknown/0 → default EXPECTED_READY=2"
+              fi
+            fi
+
+            # 40 dakika timeout (2400 saniye)
+            START_TIME=$(date +%s)
+            TIMEOUT=$((40 * 60))
+
+            while true; do
+              READY=$(kubectl get pods -n "$NAMESPACE" -l app="$APP_NAME" -o jsonpath='{.items[*].status.containerStatuses[*].ready}' | grep -o true | wc -l)
+              READY=$(echo "$READY" | tr -d '[:space:]')
+              READY=${READY:-0}
+
+              if [ "$READY" -ge "$EXPECTED_READY" ] && [ "$EXPECTED_READY" -gt 0 ]; then
+                echo "✅ Expected number of $APP_NAME pods are ready (ready=$READY)"
+                exit 0
+              fi
+
+              NOW=$(date +%s)
+              ELAPSED=$(( NOW - START_TIME ))
+              if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+                echo "❌ Timeout reached ($TIMEOUT seconds). Ready pods: $READY / Expected: $EXPECTED_READY"
+                exit 1
+              fi
+
+              echo "⏳ Waiting for $APP_NAME pods to be ready... (ready=$READY min_expected=$EXPECTED_READY)"
+              sleep 5
+            done
+      restartPolicy: Never
+  backoffLimit: 1

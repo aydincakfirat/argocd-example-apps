@@ -15,7 +15,7 @@ spec:
   completions: 1
   parallelism: 1
   backoffLimit: 2
-  activeDeadlineSeconds: 30
+  #activeDeadlineSeconds: 30
   template:
     metadata:
       annotations:
@@ -30,11 +30,11 @@ spec:
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            cpu: "150m"
-            memory: "100Mi"
+            cpu: "50m"
+            memory: "96Mi"
           limits:
-            cpu: "500m"
-            memory: "200Mi"
+            cpu: "200m"
+            memory: "128Mi"
         command:
           - /bin/sh
           - -c
@@ -77,7 +77,7 @@ spec:
             echo "=========================================="
 
             START_TIME=$(date +%s)
-            TIMEOUT=$((40 * 60))
+            TIMEOUT=$((1 * 60))
 
             while true; do
               NOW=$(date +%s)

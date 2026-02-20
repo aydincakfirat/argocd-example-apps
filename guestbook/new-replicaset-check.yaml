@@ -11,11 +11,11 @@ metadata:
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "5"
 spec:
-  ttlSecondsAfterFinished: 30
+  ttlSecondsAfterFinished: 300
   completions: 1
   parallelism: 1
   backoffLimit: 2
-  activeDeadlineSeconds: 2700
+  activeDeadlineSeconds: 30
   template:
     metadata:
       annotations:

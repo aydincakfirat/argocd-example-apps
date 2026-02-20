@@ -15,7 +15,7 @@ spec:
   completions: 1
   parallelism: 1
   backoffLimit: 2
-  #activeDeadlineSeconds: 30
+  activeDeadlineSeconds: 2700
   template:
     metadata:
       annotations:
@@ -73,18 +73,19 @@ spec:
               -o jsonpath='{.metadata.labels.pod-template-hash}')
 
             echo "✅ Pod template hash: $RS_POD_TEMPLATE_HASH"
-            echo "⏱️ Starting monitoring (timeout: 40 minutes)..."
-            echo "=========================================="
 
             START_TIME=$(date +%s)
-            TIMEOUT=$((1 * 60))
+            TIMEOUT=$((20 * 60))
+
+            echo "⏱️ Starting monitoring (timeout: $TIMEOUT seconds)..."
+            echo "=========================================="
 
             while true; do
               NOW=$(date +%s)
               ELAPSED=$(( NOW - START_TIME ))
 
               if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
-                echo "❌ TIMEOUT reached"
+                echo "❌ TIMEOUT reached $TIMEOUT seconds"
                 exit 1
               fi
 

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dolap-frontend
+description: İkinci el kıyafet uygulaması frontend servisi
+type: application
+version: 1.0.0
+appVersion: "v1"

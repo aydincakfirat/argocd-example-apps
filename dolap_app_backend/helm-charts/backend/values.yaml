@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: firataydincak/dolap-backend
+  tag: v1
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8000
+
+containerPort: 8000

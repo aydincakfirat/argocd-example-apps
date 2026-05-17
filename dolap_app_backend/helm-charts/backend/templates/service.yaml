@@ -1,20 +1,17 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Service
 metadata:
   name: {{ include "dolap-backend.fullname" . }}
+  labels:
+    app: {{ include "dolap-backend.fullname" . }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  # Dışarıdan erişim için NodePort veya LoadBalancer yapabilirsin
+  # Şimdilik ClusterIP kalsın, port-forward ile bağlanırız
+  type: {{ .Values.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.containerPort }}
+      protocol: TCP
+      name: http
   selector:
-    matchLabels:
-      app: {{ include "dolap-backend.fullname" . }}
-  template:
-    metadata:
-      labels:
-        app: {{ include "dolap-backend.fullname" . }}
-    spec:
-      containers:
-        - name: backend
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - containerPort: {{ .Values.containerPort }}
+    app: {{ include "dolap-backend.fullname" . }}

@@ -6,10 +6,7 @@ image:
   pullPolicy: Always
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 8000
-  # 30000-32767 arasında boş bir port seçiyoruz. 
-  # Frontend 30080 olduğu için bunu 30081 yapalım.
-  nodePort: 30081
 
 containerPort: 8000

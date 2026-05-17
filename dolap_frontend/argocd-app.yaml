@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dolap-frontend-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # 1. Burası sadece deponun ana adresi olmalı
+    repoURL: 'https://github.com/aydincakfirat/argocd-example-apps.git'
+    targetRevision: HEAD
+    # 2. Burası deponun içindeki tam klasör yolu olmalı
+    path: dolap_frontend/helm-charts/frontend
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

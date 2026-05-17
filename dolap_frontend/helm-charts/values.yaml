@@ -1,0 +1,9 @@
+replicaCount: 1
+image:
+  repository: firataydincak/dolap-frontend
+  tag: v1
+  pullPolicy: Always
+service:
+  type: NodePort # Dışarıdan tarayıcıyla erişebilmek için
+  port: 80
+  nodePort: 30080 # Sabit bir port verelim ki tarayıcıdan kolay bulalım

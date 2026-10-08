@@ -1,3 +1,4 @@
+
 replicaCount: 1
 image:
   repository: firataydincak/dolap-frontend
@@ -7,3 +8,13 @@ service:
   type: NodePort # Dışarıdan tarayıcıyla erişebilmek için
   port: 80
   nodePort: 30080 # Sabit bir port verelim ki tarayıcıdan kolay bulalım
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
